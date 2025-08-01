@@ -88,9 +88,11 @@ export async function refreshSession(refreshUrl: URL, redirectUrl: URL) {
     if (response.status === 401) {
         const redirectUrlCopy = new URL(redirectUrl.toString());
         redirectUrlCopy.searchParams.set("redirect", window.location.href);
-        window.location.href = redirectUrlCopy.toString();
+        return void (window.location.href = redirectUrlCopy.toString());
     } else if (!response.ok) {
         // TODO: Can HTTP response data be added to the error?
         throw new Error("The fetch refresh session has an erroneous status code.");
     }
+
+    setTimeout(() => refreshSession(refreshUrl, redirectUrl), 3_600_000);
 }
