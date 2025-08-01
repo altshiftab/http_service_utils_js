@@ -72,7 +72,7 @@ export function addErrorEventListeners() {
         postError("/api/report/error", body).catch(err => {
             // TODO: Make this nicer.
             console.error("An error occurred when reporting an error: ", err);
-        })
+        });
     });
 
     window.addEventListener("unhandledrejection", event => {
@@ -80,5 +80,17 @@ export function addErrorEventListeners() {
             // TODO: Make this nicer.
             console.error("An error occurred when reporting an unhandled rejection: ", err);
         });
-    })
+    });
+}
+
+export async function refreshSession(refreshUrl: URL, redirectUrl: URL) {
+    const response = await fetch(refreshUrl.toString());
+    if (response.status === 401) {
+        const redirectUrlCopy = new URL(redirectUrl.toString());
+        redirectUrlCopy.searchParams.set("redirect", window.location.href);
+        window.location.href = redirectUrlCopy.toString();
+    } else if (!response.ok) {
+        // TODO: Can HTTP response data be added to the error?
+        throw new Error("The fetch refresh session has an erroneous status code.");
+    }
 }
