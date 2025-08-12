@@ -83,8 +83,8 @@ export function addErrorEventListeners() {
     });
 }
 
-export async function refreshSession(refreshUrl: URL, redirectUrl: URL) {
-    const response = await fetch(refreshUrl.toString());
+export async function refreshSession(refreshUrl: URL, refreshRequestInit: RequestInit, redirectUrl: URL) {
+    const response = await fetch(refreshUrl.toString(), refreshRequestInit);
     if (response.status === 401) {
         const redirectUrlCopy = new URL(redirectUrl.toString());
         redirectUrlCopy.searchParams.set("redirect", window.location.href);
@@ -94,5 +94,5 @@ export async function refreshSession(refreshUrl: URL, redirectUrl: URL) {
         throw new Error("The fetch refresh session has an erroneous status code.");
     }
 
-    setTimeout(() => refreshSession(refreshUrl, redirectUrl), 3_600_000);
+    setTimeout(() => refreshSession(refreshUrl, refreshRequestInit, redirectUrl), 3_600_000);
 }
