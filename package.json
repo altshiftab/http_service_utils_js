@@ -1,6 +1,6 @@
 {
   "name": "@altshiftab/http_service_utils_js",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "repository": {
     "type": "git",
@@ -17,6 +17,6 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }
