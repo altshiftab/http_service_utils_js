@@ -97,7 +97,7 @@ export async function refreshSession(refreshUrl: URL, refreshRequestInit: Reques
     setTimeout(() => refreshSession(refreshUrl, refreshRequestInit, redirectUrl), 3_600_000);
 }
 
-export function setupRouting(
+export function setUpSpaRouting(
     paths: string[],
     getRenderableValue: (name: string) => Promise<any>,
     render: (renderableValue: unknown) => void,
@@ -107,15 +107,14 @@ export function setupRouting(
         throw new Error("No root path");
 
     async function renderSpa(path = location.pathname) {
-        let name = "";
-        if (path === rootPath) {
-            name = "root";
-        } else {
-            name = path.split("/").filter(Boolean).join("_").replace(/-/g, "_");
-        }
-
+        const name = path === rootPath
+            ? "root"
+            : path.split("/").filter(Boolean).join("_").replace(/-/g, "_")
+        ;
         render(new (await getRenderableValue(name)).default());
     }
+
+    // TODO: Replace with _Navigation API_ when widely supported.
 
     addEventListener("click", (event: MouseEvent) => {
         if (event.defaultPrevented || event.button !== 0)
@@ -135,19 +134,14 @@ export function setupRouting(
                 break;
             }
 
-            const root = node.getRootNode() as Document | ShadowRoot;
             const scopedElement = node instanceof Element
                 ? node
-                : (root as ShadowRoot).host ?? null
+                : node.getRootNode()
             ;
 
-            if (scopedElement && scopedElement instanceof Element) {
-                const found = scopedElement.closest
-                    ? scopedElement.closest("a[href]")
-                    : null
-                ;
-                if (found) {
-                    anchor = found as HTMLAnchorElement;
+            if (scopedElement instanceof Element) {
+                anchor = scopedElement.closest("a[href]") as HTMLAnchorElement | null;
+                if (anchor) {
                     break;
                 }
             }
@@ -156,32 +150,40 @@ export function setupRouting(
         if (!anchor)
             return;
 
+        const hyperlinkUrl = new URL(anchor.href, location.href);
+
+        // Exclude certain attributes
+
+        // Opens in another frame
         if (anchor.target !== "" && anchor.target.toLowerCase() !== "_self")
             return;
 
+        // Triggers a download
         if (anchor.hasAttribute("download"))
             return;
 
-        const url = new URL(anchor.href, location.href);
+        // Exclude certain destinations
 
-        // External links
-        if (url.origin !== location.origin)
+        // External origin
+        if (hyperlinkUrl.origin !== location.origin)
             return;
 
-        // Non-SPA routes
-        if (!paths.includes(url.pathname))
+        // Non-SPA path
+        if (!paths.includes(hyperlinkUrl.pathname))
             return;
+
+        // The click should be handled by this event listener, not the browser.
 
         event.preventDefault();
 
-        const hyperlinkDestination = url.pathname + url.search + url.hash
+        const hyperlinkDestination = hyperlinkUrl.pathname + hyperlinkUrl.search + hyperlinkUrl.hash
         const currentRelativeReference = location.pathname + location.search + location.hash;
 
         if (hyperlinkDestination === currentRelativeReference)
             return;
 
-        const [pathAndSearch, hash = ""] = hyperlinkDestination.split("#", 2);
-        if ((pathAndSearch || "") === (location.pathname + location.search)) {
+        const [pathnameAndSearch, hash = ""] = hyperlinkDestination.split("#", 2);
+        if ((pathnameAndSearch || "") === (location.pathname + location.search)) {
             // Let the browser handle scrolling to anchors without re-render
             return void history.pushState(null, "", hyperlinkDestination);
         }
