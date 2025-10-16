@@ -59,7 +59,7 @@ function postError(path: string, body: BaseErrorBody | ErrorBody) {
 }
 
 export function addErrorEventListeners() {
-    window.addEventListener("error", event => {
+    addEventListener("error", event => {
         const {message, filename, lineno, colno, error} = event;
         const body = {
             colno,
@@ -75,7 +75,7 @@ export function addErrorEventListeners() {
         });
     });
 
-    window.addEventListener("unhandledrejection", event => {
+    addEventListener("unhandledrejection", event => {
         postError("/api/report/unhandled-rejection", getBaseBody(event.reason)).catch(err => {
             // TODO: Make this nicer.
             console.error("An error occurred when reporting an unhandled rejection: ", err);
