@@ -84,17 +84,30 @@ export function addErrorEventListeners() {
 }
 
 export async function refreshSession(refreshUrl: URL, refreshRequestInit: RequestInit, redirectUrl: URL) {
-    const response = await fetch(refreshUrl.toString(), refreshRequestInit);
-    if (response.status === 401) {
-        const redirectUrlCopy = new URL(redirectUrl.toString());
-        redirectUrlCopy.searchParams.set("redirect", window.location.href);
-        return void (window.location.href = redirectUrlCopy.toString());
-    } else if (!response.ok) {
-        // TODO: Can HTTP response data be added to the error?
-        throw new Error("The fetch refresh session has an erroneous status code.");
+    const intervalMs = 3_600_000;
+    let lastRefresh = 0;
+
+    async function doRefresh() {
+        const response = await fetch(refreshUrl.toString(), refreshRequestInit);
+        if (response.status === 401) {
+            const redirectUrlCopy = new URL(redirectUrl.toString());
+            redirectUrlCopy.searchParams.set("redirect", window.location.href);
+            return void (window.location.href = redirectUrlCopy.toString());
+        } else if (!response.ok) {
+            return;
+        }
+
+        lastRefresh = Date.now();
     }
 
-    setTimeout(() => refreshSession(refreshUrl, refreshRequestInit, redirectUrl), 3_600_000);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && Date.now() - lastRefresh >= intervalMs) {
+            doRefresh();
+        }
+    });
+
+    await doRefresh();
+    setInterval(doRefresh, intervalMs);
 }
 
 export function setUpSpaRouting(
